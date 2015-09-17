@@ -92,32 +92,41 @@ case $MODE in
     echo sudo smartctl $i $MODE
   done
 ;;
+panic)
+  su -
+  for i in $DEVS
+  do
+    echo Y | $0 --test=long   || exit 3
+  done
+  #restart and force disk checks
+  sudo shutdown -rF now
+;;
 routine)
-  echo "---------------------------------"
-  echo "               INFO"
-  echo "---------------------------------"
-  $0 --info         || exit 3
-  echo "---------------------------------"
-  echo "           CAPABILITIES"
-  echo "---------------------------------"
-  $0 --capabilities || exit 3
+  # echo "---------------------------------"
+  # echo "               INFO"
+  # echo "---------------------------------"
+  # $0 --info         || exit 3
+  # echo "---------------------------------"
+  # echo "           CAPABILITIES"
+  # echo "---------------------------------"
+  # $0 --capabilities || exit 3
   echo "---------------------------------"
   echo "              HEALTH"
   echo "---------------------------------"
-  $0 --health       || exit 3
+  $0 --health | grep 'test result'
   echo "---------------------------------"
   echo "             LOG=error"
   echo "---------------------------------"
-  echo Y | $0 --log=error
+  echo Y | $0 "--log=error --quietmode=errorsonly" || exit 3
   echo "---------------------------------"
   echo "           LOG=selftest"
   echo "---------------------------------"
-  echo Y | $0 --log=selftest || exit 3
+  echo Y | $0 "--log=selftest --quietmode=errorsonly" || exit 3
   #need to know the DOY
   DOY=$(date +%j)
   #only run the short test once every ST days
   ST=10
-  if [ $(( $DOY - ($DOY / $ST) * $ST )) -eq 0 ]
+  if [ $(( 10#$DOY - (10#$DOY / $ST) * $ST )) -eq 0 ]
   then
     echo "---------------------------------"
     echo "            TEST=short"
@@ -125,8 +134,8 @@ routine)
     echo Y | $0 --test=short   || exit 3
   fi
   #only run the short test once every LT days
-  LT=$(( $ST * 10 + $ST / 2 ))
-  if [ $(( $DOY - ($DOY / $LT) * $LT )) -eq 0 ]
+  LT=$(( $ST * 5 + $ST / 2 ))
+  if [ $(( 10#$DOY - (10#$DOY / $LT) * $LT )) -eq 0 ]
   then
     echo "---------------------------------"
     echo "            TEST=long"
